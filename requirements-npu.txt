@@ -1,0 +1,3 @@
+# Optional: only needed for scripts/build_npu_model.py (INT8 -> Ethos-U -> NPU pipeline)
+tensorflow-cpu>=2.15
+ethos-u-vela>=4.0

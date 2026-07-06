@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bhs-optical-skin"
+version = "0.1.0"
+description = "Black Dragon Optical Skin: a bio-inspired distributed structural health monitoring digital twin, with Arm-optimized edge inference kernels."
+requires-python = ">=3.9"
+dependencies = ["numpy>=1.24"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
