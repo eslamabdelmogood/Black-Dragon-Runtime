@@ -113,15 +113,21 @@ function drawPointSensors(ctx) {
 }
 
 function drawOpticalSkin(ctx) {
-  const cw = ctx.canvas.width / W, ch = ctx.canvas.height / H;
   const readings = gratings.map(([y, x]) => fieldAt(y, x, fault.y, fault.x) + noise(0.3));
 
+  // Reconstruct at native grid resolution (40x60 = 2,400 cells), not full
+  // canvas pixel resolution (300x200 = 60,000 pixels). That's ~8x fewer
+  // weighted-sum evaluations per click, with no visible quality loss since
+  // the canvas upscales the low-res buffer smoothly.
   let peakVal = -Infinity, peakLoc = null;
-  const img = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
-  for (let py = 0; py < ctx.canvas.height; py++) {
-    const gy = py / ch;
-    for (let px = 0; px < ctx.canvas.width; px++) {
-      const gx = px / cw;
+  const small = document.createElement("canvas");
+  small.width = W;
+  small.height = H;
+  const sctx = small.getContext("2d");
+  const img = sctx.createImageData(W, H);
+
+  for (let gy = 0; gy < H; gy++) {
+    for (let gx = 0; gx < W; gx++) {
       let wsum = 0, vsum = 0;
       for (let i = 0; i < gratings.length; i++) {
         const [sy, sx] = gratings[i];
@@ -131,14 +137,17 @@ function drawOpticalSkin(ctx) {
         vsum += w * readings[i];
       }
       const val = vsum / wsum;
-      if (val > peakVal) { peakVal = val; peakLoc = [Math.round(gy), Math.round(gx)]; }
+      if (val > peakVal) { peakVal = val; peakLoc = [gy, gx]; }
       const t = Math.max(0, Math.min(1, (val - 25) / 90));
       const r = Math.round(30 + t * 200), g = Math.round(80 + (1 - t) * 120), b = 90;
-      const idx = (py * ctx.canvas.width + px) * 4;
+      const idx = (gy * W + gx) * 4;
       img.data[idx] = r; img.data[idx + 1] = g; img.data[idx + 2] = b; img.data[idx + 3] = 255;
     }
   }
-  ctx.putImageData(img, 0, 0);
+  sctx.putImageData(img, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(small, 0, 0, ctx.canvas.width, ctx.canvas.height);
   return peakLoc;
 }
 
